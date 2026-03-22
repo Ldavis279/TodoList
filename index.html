@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Today's To-Do</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+  :root {
+    --cream: #F7F4EE;
+    --ink: #1A1A18;
+    --ink-light: #6B6B66;
+    --ink-faint: #C8C5BC;
+    --accent: #D4622A;
+    --accent-pale: #FAEEE7;
+    --done-bg: #EEF5EE;
+    --done-text: #4A7A4A;
+    --line: rgba(26,26,24,0.1);
+    --radius: 12px;
+  }
+ 
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 1rem 4rem;
+  }
+ 
+  /* Header */
+  header {
+    width: 100%;
+    max-width: 540px;
+    padding: 3rem 0 1.5rem;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 2rem;
+  }
+ 
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.2rem;
+    letter-spacing: -0.5px;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+ 
+  .logo span { color: var(--accent); }
+ 
+  .date-line {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--ink-light);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+ 
+  /* Main area */
+  main {
+    width: 100%;
+    max-width: 540px;
+  }
+ 
+  /* Add task input */
+  .add-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 2rem;
+  }
+ 
+  .add-input {
+    flex: 1;
+    background: #fff;
+    border: 1.5px solid var(--ink-faint);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 300;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+ 
+  .add-input::placeholder { color: var(--ink-faint); }
+  .add-input:focus { border-color: var(--accent); }
+ 
+  .add-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+ 
+  .add-btn:hover { opacity: 0.88; }
+  .add-btn:active { transform: scale(0.95); }
+ 
+  .add-btn svg { stroke: #fff; }
+ 
+  /* Section label */
+  .section-label {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+ 
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+ 
+  /* Task list */
+  .task-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 2rem;
+  }
+ 
+  .task-item {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.85rem 1rem;
+    animation: slideIn 0.2s ease;
+    transition: opacity 0.2s, border-color 0.15s;
+  }
+ 
+  .task-item:hover { border-color: var(--ink-faint); }
+ 
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+ 
+  /* Checkbox */
+  .check-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink-faint);
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.15s, background 0.15s;
+    padding: 0;
+  }
+ 
+  .check-btn:hover { border-color: var(--accent); }
+ 
+  .check-btn.checked {
+    background: var(--done-text);
+    border-color: var(--done-text);
+  }
+ 
+  .check-btn.checked svg { display: block; }
+  .check-btn svg { display: none; stroke: #fff; }
+ 
+  /* Task text */
+  .task-text {
+    flex: 1;
+    font-size: 0.95rem;
+    font-weight: 300;
+    color: var(--ink);
+    line-height: 1.4;
+    outline: none;
+    background: transparent;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    cursor: text;
+    transition: color 0.15s;
+  }
+ 
+  .task-text:focus { color: var(--ink); }
+ 
+  /* Edit mode underline */
+  .task-text[contenteditable="true"] {
+    border-bottom: 1px dashed var(--accent);
+    padding-bottom: 1px;
+  }
+ 
+  .task-item.done .task-text {
+    text-decoration: line-through;
+    color: var(--ink-faint);
+  }
+ 
+  /* Action buttons */
+  .action-btns {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+ 
+  .task-item:hover .action-btns { opacity: 1; }
+ 
+  .icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s;
+  }
+ 
+  .icon-btn:hover { background: var(--cream); }
+  .icon-btn.del:hover { background: #FCEAEA; }
+  .icon-btn.del:hover svg { stroke: #C0392B; }
+ 
+  /* Done section */
+  .done-section .task-item {
+    background: var(--done-bg);
+    border-color: transparent;
+    opacity: 0.7;
+  }
+ 
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--ink-faint);
+  }
+ 
+  .empty-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.4;
+  }
+ 
+  .empty p { font-size: 0.9rem; line-height: 1.6; }
+ 
+  /* Progress bar */
+  .progress-wrap {
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+ 
+  .progress-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--ink-faint);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+ 
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+ 
+  .progress-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--ink-light);
+    min-width: 32px;
+    text-align: right;
+  }
+ 
+  /* Clear done button */
+  .clear-btn {
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0.4rem 0.85rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--ink-light);
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+    margin-bottom: 0.75rem;
+    display: inline-block;
+  }
+ 
+  .clear-btn:hover { background: var(--cream); color: var(--ink); }
+</style>
+</head>
+<body>
+ 
+<header>
+  <div class="logo">Today's <span>To-Do</span></div>
+  <div class="date-line" id="dateDisplay"></div>
+</header>
+ 
+<main>
+  <!-- Add task -->
+  <div class="add-row">
+    <input class="add-input" id="taskInput" type="text" placeholder="Add a task for today…" maxlength="140" />
+    <button class="add-btn" id="addBtn" title="Add task">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+    </button>
+  </div>
+ 
+  <!-- Progress -->
+  <div class="progress-wrap" id="progressWrap" style="display:none;">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-label" id="progressLabel">0%</div>
+  </div>
+ 
+  <!-- Active tasks -->
+  <div id="activeSection">
+    <div class="section-label">Tasks</div>
+    <ul class="task-list" id="activeList"></ul>
+    <div class="empty" id="emptyState">
+      <div class="empty-icon">✦</div>
+      <p>No tasks yet.<br>Add something to get your day started.</p>
+    </div>
+  </div>
+ 
+  <!-- Done tasks -->
+  <div id="doneSection" style="display:none;" class="done-section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+      <div class="section-label" style="margin-bottom:0;flex:1;">Done</div>
+      <button class="clear-btn" id="clearDoneBtn">Clear all</button>
+    </div>
+    <ul class="task-list" id="doneList"></ul>
+  </div>
+</main>
+ 
+<script>
+  // State
+  let tasks = JSON.parse(localStorage.getItem('ttd-tasks') || '[]');
+  let nextId = parseInt(localStorage.getItem('ttd-nextId') || '1');
+ 
+  // Date
+  const dateEl = document.getElementById('dateDisplay');
+  const now = new Date();
+  dateEl.textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+ 
+  // Save
+  function save() {
+    localStorage.setItem('ttd-tasks', JSON.stringify(tasks));
+    localStorage.setItem('ttd-nextId', nextId);
+  }
+ 
+  // Render
+  function render() {
+    const active = tasks.filter(t => !t.done);
+    const done = tasks.filter(t => t.done);
+ 
+    // Empty state
+    document.getElementById('emptyState').style.display = active.length === 0 ? 'block' : 'none';
+ 
+    // Progress
+    const total = tasks.length;
+    const pct = total === 0 ? 0 : Math.round((done.length / total) * 100);
+    const progressWrap = document.getElementById('progressWrap');
+    progressWrap.style.display = total > 0 ? 'flex' : 'none';
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressLabel').textContent = pct + '%';
+ 
+    // Active list
+    const al = document.getElementById('activeList');
+    al.innerHTML = '';
+    active.forEach(t => al.appendChild(makeItem(t)));
+ 
+    // Done list
+    const dl = document.getElementById('doneList');
+    const doneSection = document.getElementById('doneSection');
+    doneSection.style.display = done.length > 0 ? 'block' : 'none';
+    dl.innerHTML = '';
+    done.forEach(t => dl.appendChild(makeItem(t)));
+  }
+ 
+  function makeItem(task) {
+    const li = document.createElement('li');
+    li.className = 'task-item' + (task.done ? ' done' : '');
+    li.dataset.id = task.id;
+ 
+    // Checkbox
+    const check = document.createElement('button');
+    check.className = 'check-btn' + (task.done ? ' checked' : '');
+    check.title = task.done ? 'Mark undone' : 'Mark done';
+    check.innerHTML = `<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5,6 5,9.5 10.5,2.5"/></svg>`;
+    check.onclick = () => toggleDone(task.id);
+ 
+    // Text
+    const span = document.createElement('span');
+    span.className = 'task-text';
+    span.textContent = task.text;
+    span.contentEditable = 'false';
+ 
+    // Edit/Delete buttons
+    const actions = document.createElement('div');
+    actions.className = 'action-btns';
+ 
+    const editBtn = document.createElement('button');
+    editBtn.className = 'icon-btn edit';
+    editBtn.title = 'Edit';
+    editBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+    editBtn.onclick = () => startEdit(task.id, span, editBtn);
+ 
+    const delBtn = document.createElement('button');
+    delBtn.className = 'icon-btn del';
+    delBtn.title = 'Delete';
+    delBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+    delBtn.onclick = () => deleteTask(task.id);
+ 
+    actions.appendChild(editBtn);
+    actions.appendChild(delBtn);
+ 
+    li.appendChild(check);
+    li.appendChild(span);
+    li.appendChild(actions);
+    return li;
+  }
+ 
+  // Add task
+  function addTask() {
+    const input = document.getElementById('taskInput');
+    const text = input.value.trim();
+    if (!text) return;
+    tasks.push({ id: nextId++, text, done: false });
+    input.value = '';
+    save();
+    render();
+  }
+ 
+  document.getElementById('addBtn').onclick = addTask;
+  document.getElementById('taskInput').onkeydown = e => { if (e.key === 'Enter') addTask(); };
+ 
+  // Toggle done
+  function toggleDone(id) {
+    const t = tasks.find(t => t.id === id);
+    if (t) t.done = !t.done;
+    save();
+    render();
+  }
+ 
+  // Delete
+  function deleteTask(id) {
+    tasks = tasks.filter(t => t.id !== id);
+    save();
+    render();
+  }
+ 
+  // Edit
+  function startEdit(id, span, btn) {
+    const isEditing = span.contentEditable === 'true';
+    if (isEditing) {
+      // Save
+      const t = tasks.find(t => t.id === id);
+      const newText = span.textContent.trim();
+      if (t && newText) t.text = newText;
+      else if (t) span.textContent = t.text;
+      span.contentEditable = 'false';
+      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+      save();
+    } else {
+      span.contentEditable = 'true';
+      span.focus();
+      // Move cursor to end
+      const range = document.createRange();
+      range.selectNodeContents(span);
+      range.collapse(false);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+      span.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); startEdit(id, span, btn); } };
+    }
+  }
+ 
+  // Clear done
+  document.getElementById('clearDoneBtn').onclick = () => {
+    tasks = tasks.filter(t => !t.done);
+    save();
+    render();
+  };
+ 
+  // Init
+  render();
+</script>
+</body>
+</html>
