@@ -311,10 +311,32 @@
 </style>
 </head>
 <body>
+
+<!-- Authentication beforehand-->
+<div id="authOverlay" style="display:flex; position:fixed; inset:0; background:var(--cream); z-index:100; align-items:center; justify-content:center;">
+  <div style="width:100%; max-width:360px; padding:2rem;">
+    <div class="logo" style="margin-bottom:1.5rem;">Today's <span>To-Do</span></div>
+    <input id="authEmail" type="email" placeholder="Email" class="add-input" style="width:100%; margin-bottom:0.75rem;">
+    <input id="authPass" type="password" placeholder="Password" class="add-input" style="width:100%; margin-bottom:1rem;">
+    <div style="display:flex; gap:10px;">
+      <button id="loginBtn" class="add-btn" style="width:auto; padding:0.65rem 1.5rem; border-radius:var(--radius); font-family:'DM Sans'; font-size:0.9rem;">Log In</button>
+      <button id="registerBtn" class="add-btn" style="width:auto; padding:0.65rem 1.5rem; border-radius:var(--radius); font-family:'DM Sans'; font-size:0.9rem; background:var(--ink); color:#fff;">Sign Up</button>
+    </div>
+    <p id="authError" style="color:var(--accent); font-size:0.8rem; margin-top:0.75rem;"></p>
+  </div>
+</div>
+
  
 <header>
   <div class="logo">Today's <span>To-Do</span></div>
   <div class="date-line" id="dateDisplay"></div>
+  <!-- Sign out button -->
+  <button id="signOutBtn" 
+     style="display:none; float:right; background:none; 
+      border:1px solid var(--line); border-radius:8px; 
+      padding:0.3rem 0.75rem; font-size:0.75rem; 
+      cursor:pointer; color:var(--ink-light); 
+      font-family:'DM Sans';">Sign Out</button>
 </header>
  
 <main>
@@ -354,158 +376,15 @@
   </div>
 </main>
  
-<script>
-  // State
-  let tasks = JSON.parse(localStorage.getItem('ttd-tasks') || '[]');
-  let nextId = parseInt(localStorage.getItem('ttd-nextId') || '1');
- 
-  // Date
-  const dateEl = document.getElementById('dateDisplay');
-  const now = new Date();
-  dateEl.textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
- 
-  // Save
-  function save() {
-    localStorage.setItem('ttd-tasks', JSON.stringify(tasks));
-    localStorage.setItem('ttd-nextId', nextId);
-  }
- 
-  // Render
-  function render() {
-    const active = tasks.filter(t => !t.done);
-    const done = tasks.filter(t => t.done);
- 
-    // Empty state
-    document.getElementById('emptyState').style.display = active.length === 0 ? 'block' : 'none';
- 
-    // Progress
-    const total = tasks.length;
-    const pct = total === 0 ? 0 : Math.round((done.length / total) * 100);
-    const progressWrap = document.getElementById('progressWrap');
-    progressWrap.style.display = total > 0 ? 'flex' : 'none';
-    document.getElementById('progressFill').style.width = pct + '%';
-    document.getElementById('progressLabel').textContent = pct + '%';
- 
-    // Active list
-    const al = document.getElementById('activeList');
-    al.innerHTML = '';
-    active.forEach(t => al.appendChild(makeItem(t)));
- 
-    // Done list
-    const dl = document.getElementById('doneList');
-    const doneSection = document.getElementById('doneSection');
-    doneSection.style.display = done.length > 0 ? 'block' : 'none';
-    dl.innerHTML = '';
-    done.forEach(t => dl.appendChild(makeItem(t)));
-  }
- 
-  function makeItem(task) {
-    const li = document.createElement('li');
-    li.className = 'task-item' + (task.done ? ' done' : '');
-    li.dataset.id = task.id;
- 
-    // Checkbox
-    const check = document.createElement('button');
-    check.className = 'check-btn' + (task.done ? ' checked' : '');
-    check.title = task.done ? 'Mark undone' : 'Mark done';
-    check.innerHTML = `<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5,6 5,9.5 10.5,2.5"/></svg>`;
-    check.onclick = () => toggleDone(task.id);
- 
-    // Text
-    const span = document.createElement('span');
-    span.className = 'task-text';
-    span.textContent = task.text;
-    span.contentEditable = 'false';
- 
-    // Edit/Delete buttons
-    const actions = document.createElement('div');
-    actions.className = 'action-btns';
- 
-    const editBtn = document.createElement('button');
-    editBtn.className = 'icon-btn edit';
-    editBtn.title = 'Edit';
-    editBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
-    editBtn.onclick = () => startEdit(task.id, span, editBtn);
- 
-    const delBtn = document.createElement('button');
-    delBtn.className = 'icon-btn del';
-    delBtn.title = 'Delete';
-    delBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
-    delBtn.onclick = () => deleteTask(task.id);
- 
-    actions.appendChild(editBtn);
-    actions.appendChild(delBtn);
- 
-    li.appendChild(check);
-    li.appendChild(span);
-    li.appendChild(actions);
-    return li;
-  }
- 
-  // Add task
-  function addTask() {
-    const input = document.getElementById('taskInput');
-    const text = input.value.trim();
-    if (!text) return;
-    tasks.push({ id: nextId++, text, done: false });
-    input.value = '';
-    save();
-    render();
-  }
- 
-  document.getElementById('addBtn').onclick = addTask;
-  document.getElementById('taskInput').onkeydown = e => { if (e.key === 'Enter') addTask(); };
- 
-  // Toggle done
-  function toggleDone(id) {
-    const t = tasks.find(t => t.id === id);
-    if (t) t.done = !t.done;
-    save();
-    render();
-  }
- 
-  // Delete
-  function deleteTask(id) {
-    tasks = tasks.filter(t => t.id !== id);
-    save();
-    render();
-  }
- 
-  // Edit
-  function startEdit(id, span, btn) {
-    const isEditing = span.contentEditable === 'true';
-    if (isEditing) {
-      // Save
-      const t = tasks.find(t => t.id === id);
-      const newText = span.textContent.trim();
-      if (t && newText) t.text = newText;
-      else if (t) span.textContent = t.text;
-      span.contentEditable = 'false';
-      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
-      save();
-    } else {
-      span.contentEditable = 'true';
-      span.focus();
-      // Move cursor to end
-      const range = document.createRange();
-      range.selectNodeContents(span);
-      range.collapse(false);
-      window.getSelection().removeAllRanges();
-      window.getSelection().addRange(range);
-      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-      span.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); startEdit(id, span, btn); } };
-    }
-  }
- 
-  // Clear done
-  document.getElementById('clearDoneBtn').onclick = () => {
-    tasks = tasks.filter(t => !t.done);
-    save();
-    render();
-  };
- 
-  // Init
-  render();
-</script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<!-- scripts -->
+<script src="firebase-config.js"></script>
+<script src="auth.js"></script>
+<script src="app.js"></script>
+
 </body>
 </html>
