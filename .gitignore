@@ -1,0 +1,48 @@
+# ==============================================================
+# Secrets — NEVER commit these
+# ==============================================================
+
+# Firebase service account / Admin SDK private keys
+*firebase-adminsdk*.json
+serviceAccountKey*.json
+firebase-service-account*.json
+*-service-account*.json
+
+# Generic credential files
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Environment files (.env, .env.local, etc.)
+.env
+.env.*
+
+# AWS credentials (just in case they ever land in the project folder)
+.aws/
+aws-credentials*
+credentials.csv
+
+# ==============================================================
+# Build artifacts / bloat
+# ==============================================================
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Lambda packages
+function.zip
+*.zip
+
+# ==============================================================
+# OS / editor cruft
+# ==============================================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo

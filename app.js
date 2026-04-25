@@ -27,22 +27,39 @@ function loadTasksFromFirestore() {
     });
 }
 
-// adding a task
-function addTask() {
+// adding a task (via AWS API Gateway + Lambda — REST + serverless)
+async function addTask() {
   const input = document.getElementById('taskInput');
+  const addBtn = document.getElementById('addBtn');
   const text = input.value.trim();
   if (!text || !currentUser) return;
 
-  db.collection('task').add({
-    name: text,
-    description: '',
-    is_complete: false,
-    created_by: currentUser.uid,
-    list_id: '',
-    created_at: firebase.firestore.FieldValue.serverTimestamp()
-  });
-
+  const previousValue = input.value;
   input.value = '';
+  input.disabled = true;
+  addBtn.disabled = true;
+
+  try {
+    const res = await fetch(API_CONFIG.addTaskUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, userId: currentUser.uid })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Request failed (${res.status})`);
+    }
+    // The existing Firestore onSnapshot listener in loadTasksFromFirestore() renders the new task.
+  } catch (err) {
+    console.error('addTask error:', err);
+    input.value = previousValue;
+    alert('Could not add task: ' + err.message);
+  } finally {
+    input.disabled = false;
+    addBtn.disabled = false;
+    input.focus();
+  }
 }
 
 document.getElementById('addBtn').addEventListener('click', addTask);
