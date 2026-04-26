@@ -33,11 +33,14 @@ auth.onAuthStateChanged(user => {
     currentUser = user;
     document.getElementById('authOverlay').style.display = 'none';
     document.getElementById('signOutBtn').style.display = 'inline-block';
+    document.getElementById('uploadSection').style.display = 'block';
     loadTasksFromFirestore();
+    loadUploadedFiles();
   } else {
     currentUser = null;
     document.getElementById('authOverlay').style.display = 'flex';
     document.getElementById('signOutBtn').style.display = 'none';
+    document.getElementById('uploadSection').style.display = 'none';
     tasks = [];
     render();
   }

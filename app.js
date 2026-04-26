@@ -172,3 +172,58 @@ function makeItem(task) {
   li.appendChild(actions);
   return li;
 }
+
+  // ============ FILE UPLOAD ============
+document.getElementById('uploadBtn').addEventListener('click', uploadFile);
+
+function uploadFile() {
+  const fileInput = document.getElementById('fileInput');
+  const file = fileInput.files[0];
+  if (!file || !currentUser) return;
+
+  const statusEl = document.getElementById('uploadStatus');
+  statusEl.textContent = 'Uploading...';
+
+  const storageRef = storage.ref('uploads/' + currentUser.uid + '/' + file.name);
+  const uploadTask = storageRef.put(file);
+
+  uploadTask.on('state_changed',
+    function(snapshot) {
+      var pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+      statusEl.textContent = 'Uploading... ' + pct + '%';
+    },
+    function(err) {
+      statusEl.textContent = 'Upload failed: ' + err.message;
+    },
+    function() {
+      uploadTask.snapshot.ref.getDownloadURL().then(function(url) {
+        db.collection('uploads').add({
+          name: file.name,
+          url: url,
+          uploaded_by: currentUser.uid,
+          uploaded_at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        statusEl.textContent = 'Uploaded!';
+        fileInput.value = '';
+      });
+    }
+  );
+}
+
+function loadUploadedFiles() {
+  if (!currentUser) return;
+  db.collection('uploads')
+    .where('uploaded_by', '==', currentUser.uid)
+    .orderBy('uploaded_at', 'desc')
+    .onSnapshot(function(snapshot) {
+      var list = document.getElementById('fileList');
+      list.innerHTML = '';
+      snapshot.docs.forEach(function(doc) {
+        var d = doc.data();
+        var li = document.createElement('li');
+        li.className = 'task-item';
+        li.innerHTML = '<span class="task-text"><a href="' + d.url + '" target="_blank" style="color:var(--accent);">' + d.name + '</a></span>';
+        list.appendChild(li);
+      });
+    });
+}
